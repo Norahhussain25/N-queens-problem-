@@ -1,0 +1,90 @@
+#include <iostream>  
+#include <omp.h>
+#include <time.h>
+#include <sys/time.h>
+#include <sstream>
+
+// Timing execution
+double startTime, endTime;
+
+// Number of solutions found
+int numofSol = 0;
+
+std::ostringstream globalOss;
+
+// Board size and number of queens
+#define N 8
+
+void placeQ(int queens[], int row, int column) {
+    for (int i = 0; i < row; i++) {
+        // Vertical
+        if (queens[i] == column) {
+            return;
+        }
+        
+        // Two queens in the same diagonal
+        if (abs(queens[i] - column) == (row - i)) {
+            return;
+        }
+    }
+    
+    // Set the queen
+    queens[row] = column;
+    
+    if (row == N - 1) {
+        // Placed the final queen, found a solution
+        std::ostringstream oss;
+
+        // Critical section to ensure consistent state
+        
+        
+            numofSol++;  
+            oss << "Solution " << numofSol << ":\n"; // Display the solution number
+            for (int r = 0; r < N; r++) {
+                for (int c = 0; c < N; c++) {
+                    if (queens[r] == c) {
+                        oss << "Q "; // Use 'Q' for queens
+                    } else {
+                        oss << ". "; // Use '.' for empty spaces
+                    }
+                }
+                oss << std::endl; // New line for each row
+            }
+            oss << std::endl; // Blank line between solutions
+            globalOss << oss.str();
+        
+    } else {
+        // Increment row and try placing the next queen
+        for (int i = 0; i < N; i++) {
+            placeQ(queens, row + 1, i);
+        }
+    }
+} // End of placeQ()
+
+void solve() {
+    #pragma omp parallel
+    #pragma omp single
+    {
+        for (int i = 0; i < N; i++) {
+            // New task added for first row and each column recursion.
+            #pragma omp task
+            {
+                placeQ(new int[N], 0, i);
+            }
+        }
+    }
+} // End of solve()
+
+int main(int argc, char* argv[]) {
+    startTime = omp_get_wtime();
+    solve();
+    endTime = omp_get_wtime();
+
+    // Print results
+    std::cout << globalOss.str();
+    std::cout << "Board Size: " << N << std::endl; 
+    std::cout << "Number of solutions: " << numofSol << std::endl; 
+    std::cout << "Parallel Execution Time: " << endTime - startTime << " seconds." << std::endl;
+
+    return 0;
+}
