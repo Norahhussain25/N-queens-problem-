@@ -1,0 +1,80 @@
+#include <iostream>
+#include <time.h>
+#include <sstream>
+#include <cmath>
+
+// Timing execution
+double startTime, endTime;
+
+// Number of solutions found
+int numofSol = 0;
+
+std::ostringstream globalOss;
+
+// Board size and number of queens
+#define N 8
+
+void placeQ(int queens[], int row, int column) {
+    for (int i = 0; i < row; i++) {
+        // Vertical
+        if (queens[i] == column) {
+            return;
+        }
+
+        // Two queens in the same diagonal
+        if (abs(queens[i] - column) == (row - i)) {
+            return;
+        }
+    }
+
+    // Set the queen
+    queens[row] = column;
+
+    if (row == N - 1) {
+        // Placed the final queen, found a solution
+        std::ostringstream oss;
+
+        numofSol++;
+        oss << "Solution " << numofSol << ":\n"; // Display the solution number
+        for (int r = 0; r < N; r++) {
+            for (int c = 0; c < N; c++) {
+                if (queens[r] == c) {
+                    oss << "Q "; // Use 'Q' for queens
+                } else {
+                    oss << ". "; // Use '.' for empty spaces
+                }
+            }
+            oss << std::endl; // New line for each row
+        }
+        oss << std::endl; // Blank line between solutions
+        globalOss << oss.str();
+    } else {
+        // Increment row and try placing the next queen
+        for (int i = 0; i < N; i++) {
+            placeQ(queens, row + 1, i);
+        }
+    }
+} // End of placeQ()
+
+void solve() {
+    for (int i = 0; i < N; i++) {
+        // Start with each column in the first row
+        placeQ(new int[N], 0, i);
+    }
+} // End of solve()
+
+int main(int argc, char* argv[]) {
+    startTime = clock();
+    solve();
+    endTime = clock();
+
+    // Print results
+    std::cout << globalOss.str();
+    std::cout << "Board Size: " << N << std::endl;
+    std::cout << "Number of solutions: " << numofSol << std::endl;
+    std::cout << "Sequential Execution Time: " 
+              << static_cast<double>(endTime - startTime) / CLOCKS_PER_SEC 
+              << " seconds." << std::endl;
+
+    return 0;
+}
